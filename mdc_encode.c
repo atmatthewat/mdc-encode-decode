@@ -36,6 +36,7 @@
 
 #include <stdlib.h>
 #include "mdc_encode.h"
+#include "mdc_common.c"
 
 #if defined(MDC_SAMPLE_FORMAT_U8)
 
@@ -182,55 +183,6 @@ mdc_encoder_t * mdc_encoder_new(int sampleRate)
 	return encoder;
 }
 
-
-static unsigned long _flip(unsigned long crc, int bitnum)
-{
-        mdc_u16_t crcout, i, j;
-		
-		j = 1;
-		crcout = 0;
-
-        for (i=1<<(bitnum-1); i; i>>=1)
-        {
-                if (crc & i)
-                         crcout |= j;
-                j<<= 1;
-        }
-        return (crcout);
-}
-
-
-static mdc_u16_t docrc(mdc_u8_t *p, int len) 
-{
-    mdc_int_t i, j;
-    mdc_u16_t c;
-    mdc_int_t bit;
-    mdc_u16_t crc = 0x0000;
-
-    for (i=0; i<len; i++)
-    {
-        c = (mdc_u16_t)*p++;
-
-        c = _flip(c, 8);
-
-		for (j=0x80; j; j>>=1)
-		{
-			bit = crc & 0x8000;
-			crc<<= 1;
-			if (c & j)
-				bit^= 0x8000;
-			if (bit)
-				crc^= 0x1021;
-		}
-	}
-
-	crc = _flip(crc, 16);
-	crc ^= 0xffff;
-	crc &= 0xFFFF;
-
-	return(crc);
-}
-
 static mdc_u8_t * _enc_leader(mdc_u8_t *data)
 {
 	data[0] = 0x55;
@@ -260,7 +212,7 @@ static mdc_u8_t * _enc_str(mdc_u8_t *data)
 	mdc_int_t b;
 	mdc_int_t lbits[112];
 
-	ccrc = docrc(data, 4);
+	ccrc = _docrc(data, 4);
 
 	data[4] = ccrc & 0x00ff;
 	data[5] = (ccrc >> 8) & 0x00ff;
