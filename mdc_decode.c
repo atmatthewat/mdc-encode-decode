@@ -129,6 +129,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 				decoder->shstate[k] = 0;
 
 			decoder->good = 2;
+
 		}
 		else
 		{
@@ -167,6 +168,22 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 #endif
 
 		decoder->shstate[x] = 0;
+	}
+
+	if(decoder->good)
+	{
+		if(decoder->callback)
+		{
+			(decoder->callback)(	(unsigned char)decoder->op,
+								(unsigned char)decoder->arg,
+								(unsigned short)decoder->unitID,
+								(unsigned char)decoder->extra0,
+								(unsigned char)decoder->extra1,
+								(unsigned char)decoder->extra2,
+								(unsigned char)decoder->extra3);
+			decoder->good = 0;
+
+		}
 	}
 }
 
@@ -450,3 +467,12 @@ int mdc_decoder_get_double_packet(mdc_decoder_t *decoder,
 	return 0;
 }
 
+int mdc_decoder_set_callback(mdc_decoder_t *decoder, mdc_decoder_callback_t callbackFunction)
+{
+	if(!decoder)
+		return -1;
+
+	decoder->callback = callbackFunction;
+
+	return 0;
+}

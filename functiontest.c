@@ -41,6 +41,10 @@
 
 void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect);
 
+void testCallback(unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3);
+
+
+
 int main()
 {
 	mdc_encoder_t *encoder;
@@ -82,14 +86,45 @@ int main()
 
 	run(encoder, decoder, 2);
 
+	/* additional tests for callback mode */
+
+	rv = mdc_decoder_set_callback(decoder, testCallback);
+
+	rv = mdc_encoder_set_packet(encoder, 0x12, 0x34, 0x5678);
+
+	if(rv)
+	{
+		fprintf(stderr,"mdc_encoder_set_packet() failed\n");
+		exit(-1);
+	}
+
+	run(encoder, decoder, -1);
+
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+
+	if(rv)
+	{
+		fprintf(stderr,"mdc_encoder_set_packet() failed\n");
+		exit(-1);
+	}
+
+	run(encoder, decoder, -2);
+
+
+
+
 	fprintf(stderr,"mdc functional test overall success\n");
 	exit(0);
 }
+
+int callbackFound;
 
 void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 {
 	int rv, rv2, rv3;
 	int cont = 10;
+
+	callbackFound = 0;
 
 	while(cont)
 	{
@@ -116,7 +151,19 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 		}
 		else if(rv2 == 0)
 		{
-			// continue
+			if(callbackFound != 0)
+			{
+				if(callbackFound == expect)
+				{
+					return;
+				}
+				else
+				{
+					fprintf(stderr,"callback found %d but expected %d\n", callbackFound, expect);
+					exit(-1);
+				}
+			}
+			// else continue
 		}
 		else if(rv2 == 1 || rv2 == 2)
 		{
@@ -194,5 +241,63 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 			exit(-1);
 		}
 	} // while
+}
+
+void testCallback(unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3)
+{
+	if(op == 0x12)
+	{
+		callbackFound = -1;
+	}
+	else if(op == 0x55)
+	{
+		callbackFound = -2;
+	}
+	else
+	{
+		fprintf(stderr,"op doesn't match (callback)\n");
+		exit(-1);
+	}
+
+	if(arg != 0x34)
+	{
+		fprintf(stderr,"arg doesn't match (callback)\n");
+		exit(-1);
+	}
+
+	if(unitID != 0x5678)
+	{
+		fprintf(stderr,"unitID doesn't match (callback)\n");
+		exit(-1);
+	}
+
+	if(callbackFound == -1)
+		printf("single decode success (callback)\n");
+	else if(callbackFound == -2)
+	{
+		if(extra0 != 0x0a)
+		{
+			fprintf(stderr,"extra0 doesn't match (callback)\n");
+			exit(-1);
+		}
+		if(extra1 != 0x0b)
+		{
+			fprintf(stderr,"extra1 doesn't match (callback)\n");
+			exit(-1);
+		}
+		if(extra2 != 0x0c)
+		{
+			fprintf(stderr,"extra2 doesn't match (callback)\n");
+			exit(-1);
+		}
+		if(extra3 != 0x0d)
+		{
+			fprintf(stderr,"extra3 doesn't match (callback)\n");
+			exit(-1);
+		}
+
+		printf("double decode success (callback)\n");
+	}
+	// no else required, would have already failed above
 }
 
