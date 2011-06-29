@@ -51,6 +51,15 @@
 
 // #define ZEROCROSSING /* turn off for better 4-point method */
 
+
+typedef void (*mdc_decoder_callback_t)(	unsigned char op,
+										unsigned char arg,
+										unsigned short unitID,
+										unsigned char extra0,
+										unsigned char extra1,
+										unsigned char extra2,
+										unsigned char extra3);
+
 typedef struct {
 	mdc_float_t hyst;
 	mdc_float_t incr;
@@ -76,8 +85,10 @@ typedef struct {
 	mdc_u8_t extra1;
 	mdc_u8_t extra2;
 	mdc_u8_t extra3;
+	mdc_decoder_callback_t callback;
 } mdc_decoder_t;
 	
+
 
 /*
  mdc_decoder_new
@@ -152,5 +163,17 @@ int mdc_decoder_get_double_packet(mdc_decoder_t *decoder,
                            unsigned char *extra2,
                            unsigned char *extra3);
 
+
+/*
+ mdc_decoder_set_callback
+ set a callback function to be called upon successful decode
+ if this is set, the functions mdc_decoder_get_packet and mdc_decoder_get_double_packet
+ will no longer be functional, instead the callback function is called immediately when
+ a successful decode happens (from within the context of mdc_decoder_process_samples)
+
+ returns: -1 if error, 0 otherwise
+ */
+
+int mdc_decoder_set_callback(mdc_decoder_t *decoder, mdc_decoder_callback_t callbackFunction);
 
 #endif
