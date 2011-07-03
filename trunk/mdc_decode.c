@@ -174,7 +174,8 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 	{
 		if(decoder->callback)
 		{
-			(decoder->callback)(	(unsigned char)decoder->op,
+			(decoder->callback)( (int)decoder->good,
+								(unsigned char)decoder->op,
 								(unsigned char)decoder->arg,
 								(unsigned short)decoder->unitID,
 								(unsigned char)decoder->extra0,

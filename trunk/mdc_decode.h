@@ -52,7 +52,8 @@
 // #define ZEROCROSSING /* turn off for better 4-point method */
 
 
-typedef void (*mdc_decoder_callback_t)(	unsigned char op,
+typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then extra0-3 are valid
+										unsigned char op,
 										unsigned char arg,
 										unsigned short unitID,
 										unsigned char extra0,
