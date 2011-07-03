@@ -43,12 +43,14 @@ typedef unsigned char mdc_u8_t;
 typedef double mdc_float_t;
 typedef int mdc_int_t;
 
-typedef unsigned char mdc_sample_t;
+/* to change the data type, set this typedef: */
+typedef float mdc_sample_t;
 
-#define MDC_SAMPLE_FORMAT_U8
+/* AND set this to match: */
+/* #define MDC_SAMPLE_FORMAT_U8 */
 /* #define MDC_SAMPLE_FORMAT_S16 */
 /* #define MDC_SAMPLE_FORMAT_U16 */
-/* #define MDC_SAMPLE_FORMAT_FLOAT */
+#define MDC_SAMPLE_FORMAT_FLOAT
 
 
 #endif
