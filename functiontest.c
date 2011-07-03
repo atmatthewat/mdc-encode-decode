@@ -41,7 +41,7 @@
 
 void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect);
 
-void testCallback(unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3);
+void testCallback(int numFrames, unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3);
 
 
 
@@ -130,7 +130,7 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 	{
 		mdc_sample_t buffer[1024];
 
-		rv = mdc_encoder_get_samples(encoder, buffer, sizeof(buffer));
+		rv = mdc_encoder_get_samples(encoder, buffer, 1024);
 
 		if(rv < 0)
 		{
@@ -243,19 +243,33 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 	} // while
 }
 
-void testCallback(unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3)
+void testCallback(int numFrames, unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3)
 {
-	if(op == 0x12)
+	if(numFrames == 1)
 	{
 		callbackFound = -1;
 	}
-	else if(op == 0x55)
+	else if(numFrames == 2)
 	{
 		callbackFound = -2;
 	}
 	else
 	{
-		fprintf(stderr,"op doesn't match (callback)\n");
+		fprintf(stderr,"numFrames invalid (callback)\n");
+		exit(-1);
+	}
+
+	if(op == 0x12 && callbackFound == -1)
+	{
+		// good
+	}
+	else if(op == 0x55 && callbackFound == -2)
+	{
+		// good
+	}
+	else
+	{
+		fprintf(stderr,"op doesn't match expected (callback)\n");
 		exit(-1);
 	}
 
