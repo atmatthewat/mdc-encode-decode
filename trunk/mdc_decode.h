@@ -105,7 +105,6 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate);
 /*
  mdc_decoder_process_samples
  process incoming samples using an mdc_decoder object
- (currently limited to 8-bit unsigned samples)
 
  parameters: mdc_decoder_t *decoder - pointer to the decoder object
              mdc_sample_t *samples - pointer to samples (in format set in mdc_types.h)
@@ -113,8 +112,8 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate);
 
  returns: 0 if more samples are needed
          -1 if an error occurs
-          1 if a decoded single packet is available to read
-          2 if a decoded double packet is available to read
+          1 if a decoded single packet is available to read (if no callback set)
+          2 if a decoded double packet is available to read (if no callback set)
 */
  
 int mdc_decoder_process_samples(mdc_decoder_t *decoder,
