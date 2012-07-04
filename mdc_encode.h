@@ -76,7 +76,7 @@ mdc_encoder_t * mdc_encoder_new(int sampleRate);
  parameters: mdc_encoder_t *encoder  - pointer to the encoder object
 	     unsigned char op        - the "opcode"
 	     unsigned char arg       - the "argument"
-	     unsigned short unitID   - the "unit ID
+	     unsigned short unitID   - the "unit ID"
 
  returns: -1 for error, 0 otherwise
 
@@ -117,7 +117,7 @@ int mdc_encoder_set_double_packet(mdc_encoder_t *encoder,
  get generated output audio samples from encoder
 
  parameters: mdc_encoder_t *encoder - the pointer to the encoder object
-	     unsigned char *buffer  - the sample buffer to write into
+	     mdc_sample_t *buffer  - the sample buffer to write into
 	     int bufferSize         - the size (in samples) of the sample buffer
 
  returns: -1 for error, otherwise returns the number of samples written
