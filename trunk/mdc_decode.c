@@ -67,6 +67,8 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 		decoder->nlstep[i] = i;
 	}
 
+	decoder->callback = (mdc_decoder_callback_t)0L;
+
 	return decoder;
 }
 
