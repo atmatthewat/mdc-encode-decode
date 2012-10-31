@@ -361,7 +361,7 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 			if(encoder->bpos > encoder->loaded)
 			{
 				encoder->state = 0;
-				return 127;
+				return sintable[0];
 			}
 		}
 
