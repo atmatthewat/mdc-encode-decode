@@ -53,6 +53,7 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 	decoder->hyst = 3.0/256.0;
 	decoder->incr = (1200.0 * TWOPI) / ((mdc_float_t)sampleRate);
 	decoder->good = 0;
+	decoder->indouble = 0;
 	decoder->level = 0;
 
 
@@ -131,31 +132,43 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 				decoder->shstate[k] = 0;
 
 			decoder->good = 2;
+			decoder->indouble = 0;
 
 		}
 		else
 		{
-			decoder->good = 1;
-			decoder->op = data[0];
-			decoder->arg = data[1];
-			decoder->unitID = (data[2] << 8) | data[3];
-			decoder->crc = (data[4] << 8) | data[5];
-	
-			for(k=0; k<MDC_ND; k++)
-				decoder->shstate[k] = 0;
-
-			switch(data[0])
+			if(!decoder->indouble)
 			{
-			/* list of opcode that mean 'double packet' */
-			case 0x35:
-			case 0x55:
-				decoder->good = 0;
+				decoder->good = 1;
+				decoder->op = data[0];
+				decoder->arg = data[1];
+				decoder->unitID = (data[2] << 8) | data[3];
+				decoder->crc = (data[4] << 8) | data[5];
+	
+
+				switch(data[0])
+				{
+				/* list of opcode that mean 'double packet' */
+				case 0x35:
+				case 0x55:
+					decoder->good = 0;
+					decoder->indouble = 1;
+					decoder->shstate[x] = 2;
+					decoder->shcount[x] = 0;
+					_clearbits(decoder, x);
+					break;
+				default:
+					for(k=0; k<MDC_ND; k++)
+						decoder->shstate[k] = 0;	// only in the single-packet case, double keeps rest going
+					break;
+				}
+			}
+			else
+			{
+				// any subsequent good decoder allowed to attempt second half
 				decoder->shstate[x] = 2;
 				decoder->shcount[x] = 0;
 				_clearbits(decoder, x);
-				break;
-			default:
-				break;
 			}
 		}
 
