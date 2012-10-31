@@ -78,6 +78,7 @@ typedef struct {
 	mdc_int_t shcount[MDC_ND];
 	mdc_int_t bits[MDC_ND][112];
 	mdc_int_t good;
+	mdc_int_t indouble;
 	mdc_u8_t op;
 	mdc_u8_t arg;
 	mdc_u16_t unitID;
