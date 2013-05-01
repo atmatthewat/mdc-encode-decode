@@ -51,8 +51,8 @@ int main()
 	mdc_decoder_t *decoder;
 	int rv;
 
-	encoder = mdc_encoder_new(14400);
-	decoder = mdc_decoder_new(14400);
+	encoder = mdc_encoder_new(16000);
+	decoder = mdc_decoder_new(16000);
 
 	if(!decoder)
 	{
@@ -84,8 +84,33 @@ int main()
 		exit(-1);
 	}
 
+printf("1: ");
 	run(encoder, decoder, 2);
 
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("2: ");
+	run(encoder, decoder, 2);
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("3: ");
+	run(encoder, decoder, 2);
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("4: ");
+	run(encoder, decoder, 2);
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("5: ");
+	run(encoder, decoder, 2);
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("6: ");
+	run(encoder, decoder, 2);
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("7: ");
+	run(encoder, decoder, 2);
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("8: ");
+	run(encoder, decoder, 2);
+	rv = mdc_encoder_set_double_packet(encoder, 0x55, 0x34, 0x5678, 0x0a, 0x0b, 0x0c, 0x0d);
+printf("9: ");
+	run(encoder, decoder, 2);
 	/* additional tests for callback mode */
 
 	rv = mdc_decoder_set_callback(decoder, testCallback);
