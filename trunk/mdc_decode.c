@@ -63,7 +63,7 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 		decoder->zc[i] = 0;
 		decoder->xorb[i] = 0;
 		decoder->invert[i] = 0;
-		decoder->shstate[i] = 0;
+		decoder->shstate[i] = -1;
 		decoder->shcount[i] = 0;
 		decoder->nlstep[i] = i;
 	}
@@ -129,7 +129,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 			decoder->extra3 = data[3];
 
 			for(k=0; k<MDC_ND; k++)
-				decoder->shstate[k] = 0;
+				decoder->shstate[k] = -1;
 
 			decoder->good = 2;
 			decoder->indouble = 0;
@@ -159,7 +159,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 					break;
 				default:
 					for(k=0; k<MDC_ND; k++)
-						decoder->shstate[k] = 0;	// only in the single-packet case, double keeps rest going
+						decoder->shstate[k] = -1;	// only in the single-packet case, double keeps rest going
 					break;
 				}
 			}
@@ -182,7 +182,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 		printf("%x\n",ccrc);
 #endif
 
-		decoder->shstate[x] = 0;
+		decoder->shstate[x] = -1;
 	}
 
 	if(decoder->good)
@@ -222,6 +222,11 @@ static void _shiftin(mdc_decoder_t *decoder, int x)
 
 	switch(decoder->shstate[x])
 	{
+	case -1:
+		decoder->synchigh[x] = 0;
+		decoder->synclow[x] = 0;
+		decoder->shstate[x] = 0;
+		// deliberately fall through
 	case 0:
 		decoder->synchigh[x] <<= 1;
 		if(decoder->synclow[x] & 0x80000000)
