@@ -196,7 +196,8 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 								(unsigned char)decoder->extra0,
 								(unsigned char)decoder->extra1,
 								(unsigned char)decoder->extra2,
-								(unsigned char)decoder->extra3);
+								(unsigned char)decoder->extra3,
+								decoder->callback_context);
 			decoder->good = 0;
 
 		}
@@ -488,12 +489,13 @@ int mdc_decoder_get_double_packet(mdc_decoder_t *decoder,
 	return 0;
 }
 
-int mdc_decoder_set_callback(mdc_decoder_t *decoder, mdc_decoder_callback_t callbackFunction)
+int mdc_decoder_set_callback(mdc_decoder_t *decoder, mdc_decoder_callback_t callbackFunction, void *context)
 {
 	if(!decoder)
 		return -1;
 
 	decoder->callback = callbackFunction;
+	decoder->callback_context = context;
 
 	return 0;
 }
