@@ -59,7 +59,8 @@ typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then ex
 										unsigned char extra0,
 										unsigned char extra1,
 										unsigned char extra2,
-										unsigned char extra3);
+										unsigned char extra3,
+										void *context);
 
 typedef struct {
 	mdc_float_t hyst;
@@ -88,6 +89,7 @@ typedef struct {
 	mdc_u8_t extra2;
 	mdc_u8_t extra3;
 	mdc_decoder_callback_t callback;
+	void *callback_context;
 } mdc_decoder_t;
 	
 
@@ -172,9 +174,11 @@ int mdc_decoder_get_double_packet(mdc_decoder_t *decoder,
  will no longer be functional, instead the callback function is called immediately when
  a successful decode happens (from within the context of mdc_decoder_process_samples)
 
+ the callback function will be passed the (void *)context that is set here
+
  returns: -1 if error, 0 otherwise
  */
 
-int mdc_decoder_set_callback(mdc_decoder_t *decoder, mdc_decoder_callback_t callbackFunction);
+int mdc_decoder_set_callback(mdc_decoder_t *decoder, mdc_decoder_callback_t callbackFunction, void *context);
 
 #endif

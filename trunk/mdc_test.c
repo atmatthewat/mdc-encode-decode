@@ -41,7 +41,7 @@
 
 void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect);
 
-void testCallback(int numFrames, unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3);
+void testCallback(int numFrames, unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3, void *context);
 
 
 
@@ -113,7 +113,7 @@ printf("9: ");
 	run(encoder, decoder, 2);
 	/* additional tests for callback mode */
 
-	rv = mdc_decoder_set_callback(decoder, testCallback);
+	rv = mdc_decoder_set_callback(decoder, testCallback, (void*) 0x555);
 
 	rv = mdc_encoder_set_packet(encoder, 0x12, 0x34, 0x5678);
 
@@ -268,8 +268,13 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 	} // while
 }
 
-void testCallback(int numFrames, unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3)
+void testCallback(int numFrames, unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3, void *context)
 {
+	if(context != (void *)0x555)
+	{
+		fprintf(stderr,"context invalid\n");
+		exit(-1);
+	}
 	if(numFrames == 1)
 	{
 		callbackFound = -1;
