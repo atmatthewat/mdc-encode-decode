@@ -42,8 +42,8 @@
 
 #define MDC_GDTHRESH 5  // "good bits" threshold
 
-#undef FOURPOINT	// recommended 4-point method, requires high sample rates (16000 or higher)
-#define  ONEPOINT    // alternative 1-point method
+#define FOURPOINT	// recommended 4-point method, requires high sample rates (16000 or higher)
+#undef  ONEPOINT    // alternative 1-point method
 
 #ifdef FOURPOINT
  #define MDC_ND 5  // recommended for four-point method
