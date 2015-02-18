@@ -40,13 +40,25 @@
 #define TWOPI (2.0 * 3.1415926535)
 #endif
 
-#define MDC_ND 5	// number of decoders (5 is a good choice for new way, 4 is a good choice for zerocrossing
 #define MDC_GDTHRESH 5  // "good bits" threshold
 
-#define DIFFERENTIATOR
+#undef FOURPOINT	//
+#define  ONEPOINT
+#undef ZEROCROSSING
 
-// #define ZEROCROSSING /* turn off for better 4-point method */
+#ifdef FOURPOINT
+ #define MDC_ND 5  // recommended for four-point method
+#endif
 
+#ifdef ZEROCROSSING
+ #define MDC_ND 4 	// recommended for zerocrossing method
+#endif
+
+#ifdef ONEPOINT
+ #define MDC_ND 4  // recommended for one-point method
+#endif
+
+ // #define MDC_ND <other value>
 
 typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then extra0-3 are valid
 										unsigned char op,
@@ -78,7 +90,7 @@ typedef struct {
 	mdc_float_t hyst;
 	mdc_float_t incr;
 	mdc_int_t level;
-	mdc_float_t lastvalue;
+	// mdc_float_t lastvalue;
 	mdc_int_t good;
 	mdc_int_t indouble;
 	mdc_u8_t op;
