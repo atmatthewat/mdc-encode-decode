@@ -42,20 +42,15 @@
 
 #define MDC_GDTHRESH 5  // "good bits" threshold
 
-#undef FOURPOINT	//
-#define  ONEPOINT
-#undef ZEROCROSSING
+#undef FOURPOINT	// recommended 4-point method, requires high sample rates (16000 or higher)
+#define  ONEPOINT    // alternative 1-point method
 
 #ifdef FOURPOINT
  #define MDC_ND 5  // recommended for four-point method
 #endif
 
-#ifdef ZEROCROSSING
- #define MDC_ND 4 	// recommended for zerocrossing method
-#endif
-
 #ifdef ONEPOINT
- #define MDC_ND 4  // recommended for one-point method
+ #define MDC_ND 18  // recommended for one-point method
 #endif
 
  // #define MDC_ND <other value>
@@ -73,11 +68,13 @@ typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then ex
 typedef struct
 {
 	mdc_float_t th;
-	mdc_int_t zc;
+//	mdc_int_t zc; - deprecated
 	mdc_int_t xorb;
 	mdc_int_t invert;
+#ifdef FOURPOINT
 	mdc_int_t nlstep;
 	mdc_float_t nlevel[10];
+#endif
 	mdc_u32_t synclow;
 	mdc_u32_t synchigh;
 	mdc_int_t shstate;

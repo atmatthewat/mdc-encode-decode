@@ -55,12 +55,14 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 	for(i=0; i<MDC_ND; i++)
 	{
 		decoder->du[i].th = 0.0 + ( ((mdc_float_t)i) * (TWOPI/(mdc_float_t)MDC_ND));
-		decoder->du[i].zc = 0;
+		// decoder->du[i].zc = 0; - deprecated
 		decoder->du[i].xorb = 0;
 		decoder->du[i].invert = 0;
 		decoder->du[i].shstate = -1;
 		decoder->du[i].shcount = 0;
+	#ifdef FOURPOINT
 		decoder->du[i].nlstep = i;
+	#endif
 	}
 
 	decoder->callback = (mdc_decoder_callback_t)0L;
@@ -266,6 +268,7 @@ static void _shiftin(mdc_decoder_t *decoder, int x)
 	}
 }
 
+#if 0 // zerocrossing deprecated
 static void _zcproc(mdc_decoder_t *decoder, int x)
 {
 	switch(decoder->du[x].zc)
@@ -282,6 +285,9 @@ static void _zcproc(mdc_decoder_t *decoder, int x)
 
 	_shiftin(decoder, x);
 }
+#endif
+
+#ifdef FOURPOINT
 
 static void _nlproc(mdc_decoder_t *decoder, int x)
 {
@@ -307,6 +313,7 @@ static void _nlproc(mdc_decoder_t *decoder, int x)
 		decoder->du[x].xorb = !(decoder->du[x].xorb);
 	_shiftin(decoder, x);
 }
+#endif
 
 int mdc_decoder_process_samples(mdc_decoder_t *decoder,
                                 mdc_sample_t *samples,
@@ -336,7 +343,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 #error "no known sample format set"
 #endif
 
-#if defined(ZEROCROSSING)
+#if 0  // zerocrossing is deprecated - doesn't work well for xor-precoded
 		if(decoder->level == 0)
 		{
 			if(value > decoder->hyst)
@@ -367,8 +374,9 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 				decoder->du[j].zc = 0;
 			}
 		}
+#endif
 
-#elif defined(ONEPOINT)
+#if defined(ONEPOINT)
 
 		for(j=0; j<MDC_ND; j++)
 		{
