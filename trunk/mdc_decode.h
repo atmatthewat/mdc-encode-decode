@@ -5,6 +5,7 @@
  * 4 October 2010 - fixed for 64-bit
  * 5 October 2010 - added four-point method to C version
  * 7 October 2010 - typedefs for easier porting
+ * 18 February 2015 - refactor decode units
  *
  * Author: Matthew Kaufman (matthew@eeph.com)
  *
@@ -62,22 +63,27 @@ typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then ex
 										unsigned char extra3,
 										void *context);
 
+typedef struct
+{
+	mdc_float_t th;
+	mdc_int_t zc;
+	mdc_int_t xorb;
+	mdc_int_t invert;
+	mdc_int_t nlstep;
+	mdc_float_t nlevel[10];
+	mdc_u32_t synclow;
+	mdc_u32_t synchigh;
+	mdc_int_t shstate;
+	mdc_int_t shcount;
+	mdc_int_t bits[112];
+} mdc_decode_unit_t;
+
 typedef struct {
+	mdc_decode_unit_t du[MDC_ND];
 	mdc_float_t hyst;
 	mdc_float_t incr;
-	mdc_float_t th[MDC_ND];
 	mdc_int_t level;
 	mdc_float_t lastvalue;
-	mdc_int_t zc[MDC_ND];
-	mdc_int_t xorb[MDC_ND];
-	mdc_int_t invert[MDC_ND];
-	mdc_int_t nlstep[MDC_ND];
-	mdc_float_t nlevel[MDC_ND][10];
-	mdc_u32_t synclow[MDC_ND];
-	mdc_u32_t synchigh[MDC_ND];
-	mdc_int_t shstate[MDC_ND];
-	mdc_int_t shcount[MDC_ND];
-	mdc_int_t bits[MDC_ND][112];
 	mdc_int_t good;
 	mdc_int_t indouble;
 	mdc_u8_t op;

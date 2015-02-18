@@ -7,6 +7,7 @@
  * 5 October 2010 - added four-point method to C version
  * 7 October 2010 - typedefs for easier porting
  * 9 October 2010 - fixed invert case for four-point decoder
+ * 18 February 2015 - refactor decode units
  *
  * Author: Matthew Kaufman (matthew@eeph.com)
  *
@@ -59,13 +60,13 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 
 	for(i=0; i<MDC_ND; i++)
 	{
-		decoder->th[i] = 0.0 + ( ((mdc_float_t)i) * (TWOPI/(mdc_float_t)MDC_ND));
-		decoder->zc[i] = 0;
-		decoder->xorb[i] = 0;
-		decoder->invert[i] = 0;
-		decoder->shstate[i] = -1;
-		decoder->shcount[i] = 0;
-		decoder->nlstep[i] = i;
+		decoder->du[i].th = 0.0 + ( ((mdc_float_t)i) * (TWOPI/(mdc_float_t)MDC_ND));
+		decoder->du[i].zc = 0;
+		decoder->du[i].xorb = 0;
+		decoder->du[i].invert = 0;
+		decoder->du[i].shstate = -1;
+		decoder->du[i].shcount = 0;
+		decoder->du[i].nlstep = i;
 	}
 
 	decoder->callback = (mdc_decoder_callback_t)0L;
@@ -77,7 +78,7 @@ static void _clearbits(mdc_decoder_t *decoder, mdc_int_t x)
 {
 	mdc_int_t i;
 	for(i=0; i<112; i++)
-		decoder->bits[x][i] = 0;
+		decoder->du[x].bits[i] = 0;
 }
 
 
@@ -97,7 +98,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 		for(j=0; j<7; j++)
 		{
 			k = (j*16) + i;
-			lbits[lbc] = decoder->bits[x][k];
+			lbits[lbc] = decoder->du[x].bits[k];
 			++lbc;
 		}
 	}
@@ -121,7 +122,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 	if(ccrc == rcrc)
 	{
 
-		if(decoder->shstate[x] == 2)
+		if(decoder->du[x].shstate == 2)
 		{
 			decoder->extra0 = data[0];
 			decoder->extra1 = data[1];
@@ -129,7 +130,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 			decoder->extra3 = data[3];
 
 			for(k=0; k<MDC_ND; k++)
-				decoder->shstate[k] = -1;
+				decoder->du[k].shstate = -1;
 
 			decoder->good = 2;
 			decoder->indouble = 0;
@@ -153,21 +154,21 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 				case 0x55:
 					decoder->good = 0;
 					decoder->indouble = 1;
-					decoder->shstate[x] = 2;
-					decoder->shcount[x] = 0;
+					decoder->du[x].shstate = 2;
+					decoder->du[x].shcount = 0;
 					_clearbits(decoder, x);
 					break;
 				default:
 					for(k=0; k<MDC_ND; k++)
-						decoder->shstate[k] = -1;	// only in the single-packet case, double keeps rest going
+						decoder->du[k].shstate = -1;	// only in the single-packet case, double keeps rest going
 					break;
 				}
 			}
 			else
 			{
 				// any subsequent good decoder allowed to attempt second half
-				decoder->shstate[x] = 2;
-				decoder->shcount[x] = 0;
+				decoder->du[x].shstate = 2;
+				decoder->du[x].shcount = 0;
 				_clearbits(decoder, x);
 			}
 		}
@@ -182,7 +183,7 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 		printf("%x\n",ccrc);
 #endif
 
-		decoder->shstate[x] = -1;
+		decoder->du[x].shstate = -1;
 	}
 
 	if(decoder->good)
@@ -218,49 +219,49 @@ static int _onebits(mdc_u32_t n)
 
 static void _shiftin(mdc_decoder_t *decoder, int x)
 {
-	int bit = decoder->xorb[x];
+	int bit = decoder->du[x].xorb;
 	int gcount;
 
-	switch(decoder->shstate[x])
+	switch(decoder->du[x].shstate)
 	{
 	case -1:
-		decoder->synchigh[x] = 0;
-		decoder->synclow[x] = 0;
-		decoder->shstate[x] = 0;
+		decoder->du[x].synchigh = 0;
+		decoder->du[x].synclow = 0;
+		decoder->du[x].shstate = 0;
 		// deliberately fall through
 	case 0:
-		decoder->synchigh[x] <<= 1;
-		if(decoder->synclow[x] & 0x80000000)
-			decoder->synchigh[x] |= 1;
-		decoder->synclow[x] <<= 1;
+		decoder->du[x].synchigh <<= 1;
+		if(decoder->du[x].synclow & 0x80000000)
+			decoder->du[x].synchigh |= 1;
+		decoder->du[x].synclow <<= 1;
 		if(bit)
-			decoder->synclow[x] |= 1;
+			decoder->du[x].synclow |= 1;
 
-		gcount = _onebits(0x000000ff & (0x00000007 ^ decoder->synchigh[x]));
-		gcount += _onebits(0x092a446f ^ decoder->synclow[x]);
+		gcount = _onebits(0x000000ff & (0x00000007 ^ decoder->du[x].synchigh));
+		gcount += _onebits(0x092a446f ^ decoder->du[x].synclow);
 
 		if(gcount <= MDC_GDTHRESH)
 		{
- //printf("sync %d  %x %x \n",gcount,decoder->synchigh[x], decoder->synclow[x]);
-			decoder->shstate[x] = 1;
-			decoder->shcount[x] = 0;
+ //printf("sync %d  %x %x \n",gcount,decoder->du[x].synchigh, decoder->du[x].synclow);
+			decoder->du[x].shstate = 1;
+			decoder->du[x].shcount = 0;
 			_clearbits(decoder, x);
 		}
 		else if(gcount >= (40 - MDC_GDTHRESH))
 		{
  //printf("isync %d\n",gcount);
-			decoder->shstate[x] = 1;
-			decoder->shcount[x] = 0;
-			decoder->xorb[x] = !(decoder->xorb[x]);
-			decoder->invert[x] = !(decoder->invert[x]);
+			decoder->du[x].shstate = 1;
+			decoder->du[x].shcount = 0;
+			decoder->du[x].xorb = !(decoder->du[x].xorb);
+			decoder->du[x].invert = !(decoder->du[x].invert);
 			_clearbits(decoder, x);
 		}
 		return;
 	case 1:
 	case 2:
-		decoder->bits[x][decoder->shcount[x]] = bit;
-		decoder->shcount[x]++;
-		if(decoder->shcount[x] > 111)
+		decoder->du[x].bits[decoder->du[x].shcount] = bit;
+		decoder->du[x].shcount++;
+		if(decoder->du[x].shcount > 111)
 		{
 			_procbits(decoder, x);
 		}
@@ -273,13 +274,13 @@ static void _shiftin(mdc_decoder_t *decoder, int x)
 
 static void _zcproc(mdc_decoder_t *decoder, int x)
 {
-	switch(decoder->zc[x])
+	switch(decoder->du[x].zc)
 	{
 	case 2:
 	case 4:
 		break;
 	case 3:
-		decoder->xorb[x] = !(decoder->xorb[x]);
+		decoder->du[x].xorb = !(decoder->du[x].xorb);
 		break;
 	default:
 		return;
@@ -293,23 +294,23 @@ static void _nlproc(mdc_decoder_t *decoder, int x)
 	mdc_float_t vnow;
 	mdc_float_t vpast;
 
-	switch(decoder->nlstep[x])
+	switch(decoder->du[x].nlstep)
 	{
 	case 3:
-		vnow = ((-0.60 * decoder->nlevel[x][3]) + (.97 * decoder->nlevel[x][1]));
-		vpast = ((-0.60 * decoder->nlevel[x][7]) + (.97 * decoder->nlevel[x][9]));
+		vnow = ((-0.60 * decoder->du[x].nlevel[3]) + (.97 * decoder->du[x].nlevel[1]));
+		vpast = ((-0.60 * decoder->du[x].nlevel[7]) + (.97 * decoder->du[x].nlevel[9]));
 		break;
 	case 8:
-		vnow = ((-0.60 * decoder->nlevel[x][8]) + (.97 * decoder->nlevel[x][6]));
-		vpast = ((-0.60 * decoder->nlevel[x][2]) + (.97 * decoder->nlevel[x][4]));
+		vnow = ((-0.60 * decoder->du[x].nlevel[8]) + (.97 * decoder->du[x].nlevel[6]));
+		vpast = ((-0.60 * decoder->du[x].nlevel[2]) + (.97 * decoder->du[x].nlevel[4]));
 		break;
 	default:
 		return;
 	}
 
-	decoder->xorb[x] = (vnow > vpast) ? 1 : 0;
-	if(decoder->invert[x])
-		decoder->xorb[x] = !(decoder->xorb[x]);
+	decoder->du[x].xorb = (vnow > vpast) ? 1 : 0;
+	if(decoder->du[x].invert)
+		decoder->du[x].xorb = !(decoder->du[x].xorb);
 	_shiftin(decoder, x);
 }
 
@@ -352,7 +353,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 			if(delta > decoder->hyst)
 			{
 				for(k=0; k<MDC_ND; k++)
-					decoder->zc[k]++;
+					decoder->du[k].zc++;
 				decoder->level = 1;
 			}
 		}
@@ -361,7 +362,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 			if(delta < (-1 * decoder->hyst))
 			{
 				for(k=0; k<MDC_ND; k++)
-					decoder->zc[k]++;
+					decoder->du[k].zc++;
 				decoder->level = 0;
 			}
 		}
@@ -371,7 +372,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 			if(s > decoder->hyst)
 			{
 				for(k=0; k<MDC_ND; k++)
-					decoder->zc[k]++;
+					decoder->du[k].zc++;
 				decoder->level = 1;
 			}
 		}
@@ -380,7 +381,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 			if(s < (-1.0 * decoder->hyst))
 			{
 				for(k=0; k<MDC_ND; k++)
-					decoder->zc[k]++;
+					decoder->du[k].zc++;
 				decoder->level = 0;
 			}
 		}
@@ -389,12 +390,12 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 
 		for(j=0; j<MDC_ND; j++)
 		{
-			decoder->th[j] += decoder->incr;
-			if(decoder->th[j] >= TWOPI)
+			decoder->du[j].th += decoder->incr;
+			if(decoder->du[j].th >= TWOPI)
 			{
 				_zcproc(decoder, j);
-				decoder->th[j] -= TWOPI;
-				decoder->zc[j] = 0;
+				decoder->du[j].th -= TWOPI;
+				decoder->du[j].zc = 0;
 			}
 		}
 #else	/* ZEROCROSSING */
@@ -402,17 +403,17 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 
 		for(j=0; j<MDC_ND; j++)
 		{
-			decoder->th[j] += (5.0 * decoder->incr);
-			if(decoder->th[j] >= TWOPI)
+			decoder->du[j].th += (5.0 * decoder->incr);
+			if(decoder->du[j].th >= TWOPI)
 			{
-				decoder->nlstep[j]++;
-				if(decoder->nlstep[j] > 9)
-					decoder->nlstep[j] = 0;
-				decoder->nlevel[j][decoder->nlstep[j]] = value;	
+				decoder->du[j].nlstep++;
+				if(decoder->du[j].nlstep > 9)
+					decoder->du[j].nlstep = 0;
+				decoder->du[j].nlevel[decoder->du[j].nlstep] = value;	
 
 				_nlproc(decoder, j);
 
-				decoder->th[j] -= TWOPI;
+				decoder->du[j].th -= TWOPI;
 			}
 		}
 #endif
