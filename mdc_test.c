@@ -144,6 +144,8 @@ printf("9: ");
 
 int callbackFound;
 
+#define NUMSAMPLES 1024
+
 void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 {
 	int rv, rv2, rv3;
@@ -153,9 +155,9 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 
 	while(cont)
 	{
-		mdc_sample_t buffer[1024];
+		mdc_sample_t buffer[NUMSAMPLES];
 
-		rv = mdc_encoder_get_samples(encoder, buffer, 1024);
+		rv = mdc_encoder_get_samples(encoder, buffer, NUMSAMPLES);
 
 		if(rv < 0)
 		{
@@ -164,7 +166,11 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 		}
 		else if(rv == 0)
 		{
+			int i;
 			--cont;
+			for(i = 0; i<NUMSAMPLES; i++)
+				buffer[i] = 0;
+			rv = NUMSAMPLES;
 		}
 
 		rv2 = mdc_decoder_process_samples(decoder, buffer, rv);
