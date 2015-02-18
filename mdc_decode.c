@@ -1,13 +1,7 @@
 /*-
  * mdc_decode.c
- *   Decodes a specific format of 1200 BPS MSK data burst
+ *   Decodes a specific format of 1200 BPS XOR-precoded MSK data burst
  *   from input audio samples.
- *
- * 4 October 2010 - fixed for 64-bit
- * 5 October 2010 - added four-point method to C version
- * 7 October 2010 - typedefs for easier porting
- * 9 October 2010 - fixed invert case for four-point decoder
- * 18 February 2015 - refactor decode units
  *
  * Author: Matthew Kaufman (matthew@eeph.com)
  *

@@ -2,11 +2,6 @@
  * mdc_decode.h
  *  header for mdc_decode.c
  *
- * 4 October 2010 - fixed for 64-bit
- * 5 October 2010 - added four-point method to C version
- * 7 October 2010 - typedefs for easier porting
- * 18 February 2015 - refactor decode units
- *
  * Author: Matthew Kaufman (matthew@eeph.com)
  *
  * Copyright (c) 2005, 2010  Matthew Kaufman  All rights reserved.
