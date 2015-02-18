@@ -336,15 +336,10 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 #error "no known sample format set"
 #endif
 
-#ifdef ZEROCROSSING
-
-#ifdef DIFFERENTIATOR
-		delta = value - decoder->lastvalue;
-		decoder->lastvalue = value;
-
+#if defined(ZEROCROSSING)
 		if(decoder->level == 0)
 		{
-			if(delta > decoder->hyst)
+			if(value > decoder->hyst)
 			{
 				for(k=0; k<MDC_ND; k++)
 					decoder->du[k].zc++;
@@ -353,33 +348,13 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 		}
 		else
 		{
-			if(delta < (-1 * decoder->hyst))
+			if(value < (-1.0 * decoder->hyst))
 			{
 				for(k=0; k<MDC_ND; k++)
 					decoder->du[k].zc++;
 				decoder->level = 0;
 			}
 		}
-#else	/* DIFFERENTIATOR */
-		if(decoder->level == 0)
-		{
-			if(s > decoder->hyst)
-			{
-				for(k=0; k<MDC_ND; k++)
-					decoder->du[k].zc++;
-				decoder->level = 1;
-			}
-		}
-		else
-		{
-			if(s < (-1.0 * decoder->hyst))
-			{
-				for(k=0; k<MDC_ND; k++)
-					decoder->du[k].zc++;
-				decoder->level = 0;
-			}
-		}
-#endif	/* DIFFERENTIATOR */
 		
 
 		for(j=0; j<MDC_ND; j++)
@@ -392,7 +367,26 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 				decoder->du[j].zc = 0;
 			}
 		}
-#else	/* ZEROCROSSING */
+
+#elif defined(ONEPOINT)
+
+		for(j=0; j<MDC_ND; j++)
+		{
+			decoder->du[j].th += decoder->incr;
+			if(decoder->du[j].th >= TWOPI)
+			{
+				if(value > 0)
+					decoder->du[j].xorb = 1;
+				else
+					decoder->du[j].xorb = 0;
+				if(decoder->du[j].invert)
+					decoder->du[j].xorb = !(decoder->du[j].xorb);
+				_shiftin(decoder, j);
+				decoder->du[j].th -= TWOPI;
+			}
+		}
+
+#elif defined(FOURPOINT)	/* ZEROCROSSING */
 
 
 		for(j=0; j<MDC_ND; j++)
@@ -410,6 +404,9 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 				decoder->du[j].th -= TWOPI;
 			}
 		}
+
+#else
+#error "no decode strategy chosen"
 #endif
 	}
 
