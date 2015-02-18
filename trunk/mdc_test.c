@@ -150,6 +150,7 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 {
 	int rv, rv2, rv3;
 	int cont = 10;
+	int msgFound = 0;
 
 	callbackFound = 0;
 
@@ -202,6 +203,8 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 			unsigned char arg;
 			unsigned short unitID;
 			unsigned char extra0, extra1, extra2, extra3;
+
+			msgFound = 1;
 
 			if(rv2 != expect)
 			{
@@ -272,6 +275,11 @@ void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect)
 			exit(-1);
 		}
 	} // while
+
+	if(!msgFound && !callbackFound)
+	{
+		fprintf(stderr,"warning: no packet found\n");
+	}
 }
 
 void testCallback(int numFrames, unsigned char op, unsigned char arg, unsigned short unitID, unsigned char extra0, unsigned char extra1, unsigned char extra2, unsigned char extra3, void *context)
