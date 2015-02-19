@@ -40,17 +40,20 @@ typedef short mdc_s16_t;
 typedef unsigned short mdc_u16_t;
 typedef char mdc_s8_t;
 typedef unsigned char mdc_u8_t;
-typedef double mdc_float_t;
 typedef int mdc_int_t;
 
+#ifndef MDC_FIXEDMATH
+typedef double mdc_float_t;
+#endif // MDC_FIXEDMATH
+
 /* to change the data type, set this typedef: */
-typedef float mdc_sample_t;
+typedef short mdc_sample_t;
 
 /* AND set this to match: */
 /* #define MDC_SAMPLE_FORMAT_U8 */
-/* #define MDC_SAMPLE_FORMAT_S16 */
+#define MDC_SAMPLE_FORMAT_S16
 /* #define MDC_SAMPLE_FORMAT_U16 */
-#define MDC_SAMPLE_FORMAT_FLOAT
+/* #define MDC_SAMPLE_FORMAT_FLOAT */
 
 
 #endif
