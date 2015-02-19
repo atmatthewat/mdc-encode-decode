@@ -36,8 +36,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "mdc_decode.h"
 #include "mdc_encode.h"
+#include "mdc_decode.h"
 
 void run(mdc_encoder_t *encoder, mdc_decoder_t *decoder, int expect);
 
