@@ -45,8 +45,33 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 	if(!decoder)
 		return (mdc_decoder_t *) 0L;
 
-	decoder->hyst = 3.0/256.0;
-	decoder->incr = (1200.0 * TWOPI) / ((mdc_float_t)sampleRate);
+//	decoder->hyst = 3.0/256.0; - deprecated (zerocrossing)
+//	decoder->incr = (1200.0 * TWOPI) / ((mdc_float_t)sampleRate);
+
+	if(sampleRate == 8000)
+	{
+		decoder->incru = 644245094;
+	} else if(sampleRate == 16000)
+	{
+		decoder->incru = 322122547;
+	} else if(sampleRate == 22050)
+	{
+		decoder->incru = 233739716;
+	} else if(sampleRate == 32000)
+	{
+		decoder->incru = 161061274;
+	} else if(sampleRate == 44100)
+	{
+		decoder->incru = 116869858;
+	} else if(sampleRate == 48000)
+	{
+		decoder->incru = 107374182;
+	} else
+	{
+		// WARNING: lower precision than above
+		decoder->incru = 1200 * 2 * (0x80000000 / sampleRate);
+	}
+
 	decoder->good = 0;
 	decoder->indouble = 0;
 	decoder->level = 0;
@@ -54,7 +79,8 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 
 	for(i=0; i<MDC_ND; i++)
 	{
-		decoder->du[i].th = 0.0 + ( ((mdc_float_t)i) * (TWOPI/(mdc_float_t)MDC_ND));
+		// decoder->du[i].th = 0.0 + ( ((mdc_float_t)i) * (TWOPI/(mdc_float_t)MDC_ND));
+		decoder->du[i].thu = i * 2 * (0x80000000 / MDC_ND);
 		// decoder->du[i].zc = 0; - deprecated
 		decoder->du[i].xorb = 0;
 		decoder->du[i].invert = 0;
@@ -321,8 +347,11 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 {
 	mdc_int_t i, j, k;
 	mdc_sample_t sample;
+#ifndef MDC_FIXEDMATH
 	mdc_float_t value;
-	mdc_float_t delta;
+#else
+	mdc_int_t value;
+#endif
 
 	if(!decoder)
 		return -1;
@@ -331,6 +360,22 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 	{
 		sample = samples[i];
 
+#ifdef MDC_FIXEDMATH
+#if defined(MDC_SAMPLE_FORMAT_U8)
+		value = ((mdc_int_t)sample) - 127;
+#elif defined(MDC_SAMPLE_FORMAT_U16)
+		value = ((mdc_int_t)sample) - 32767;
+#elif defined(MDC_SAMPLE_FORMAT_S16)
+		value = (mdc_int_t) sample;
+#elif defined(MDC_SAMPLE_FORMAT_FLOAT)
+#error "fixed-point math not allowed with float sample format"
+#else
+#error "no known sample format set"
+#endif // sample format
+
+#endif // is MDC_FIXEDMATH
+
+#ifndef MDC_FIXEDMATH
 #if defined(MDC_SAMPLE_FORMAT_U8)
 		value = (((mdc_float_t)sample) - 128.0)/256;
 #elif defined(MDC_SAMPLE_FORMAT_U16)
@@ -341,7 +386,9 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 		value = sample;
 #else
 #error "no known sample format set"
-#endif
+#endif // sample format
+#endif // not MDC_FIXEDMATH
+
 
 #if 0  // zerocrossing is deprecated - doesn't work well for xor-precoded
 		if(decoder->level == 0)
@@ -380,8 +427,11 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 
 		for(j=0; j<MDC_ND; j++)
 		{
-			decoder->du[j].th += decoder->incr;
-			if(decoder->du[j].th >= TWOPI)
+			// decoder->du[j].th += decoder->incr;
+			mdc_u32_t lthu = decoder->du[j].thu;
+			decoder->du[j].thu += decoder->incru;
+		//	if(decoder->du[j].th >= TWOPI)
+			if(decoder->du[j].thu < lthu) // wrapped
 			{
 				if(value > 0)
 					decoder->du[j].xorb = 1;
@@ -390,17 +440,23 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 				if(decoder->du[j].invert)
 					decoder->du[j].xorb = !(decoder->du[j].xorb);
 				_shiftin(decoder, j);
-				decoder->du[j].th -= TWOPI;
+				//decoder->du[j].th -= TWOPI;
 			}
 		}
 
 #elif defined(FOURPOINT)	/* ZEROCROSSING */
 
+#ifdef MDC_FIXEDMATH
+#error "fixed-point math not allowed for fourpoint strategy"
+#endif
 
 		for(j=0; j<MDC_ND; j++)
 		{
-			decoder->du[j].th += (5.0 * decoder->incr);
-			if(decoder->du[j].th >= TWOPI)
+			//decoder->du[j].th += (5.0 * decoder->incr);
+			mdc_u32_t lthu = decoder->du[j].thu;
+			decoder->du[j].thu += 5 * decoder->incru;
+		//	if(decoder->du[j].th >= TWOPI)
+			if(decoder->du[j].thu < lthu) // wrapped
 			{
 				decoder->du[j].nlstep++;
 				if(decoder->du[j].nlstep > 9)
@@ -409,7 +465,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 
 				_nlproc(decoder, j);
 
-				decoder->du[j].th -= TWOPI;
+				//decoder->du[j].th -= TWOPI;
 			}
 		}
 

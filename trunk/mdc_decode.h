@@ -34,11 +34,13 @@
 #ifndef _MDC_DECODE_H_
 #define _MDC_DECODE_H_
 
+// #define MDC_FIXEDMATH // if you want this, define before mdc_types.h
+
 #include "mdc_types.h"
 
-#ifndef TWOPI
-#define TWOPI (2.0 * 3.1415926535)
-#endif
+// #ifndef TWOPI
+// #define TWOPI (2.0 * 3.1415926535)
+// #endif
 
 #define MDC_GDTHRESH 5  // "good bits" threshold
 
@@ -50,7 +52,7 @@
 #endif
 
 #ifdef ONEPOINT
- #define MDC_ND 18  // recommended for one-point method
+ #define MDC_ND 24  // recommended for one-point method
 #endif
 
  // #define MDC_ND <other value>
@@ -67,14 +69,18 @@ typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then ex
 
 typedef struct
 {
-	mdc_float_t th;
+//	mdc_float_t th;
+	mdc_u32_t thu;
 //	mdc_int_t zc; - deprecated
 	mdc_int_t xorb;
 	mdc_int_t invert;
 #ifdef FOURPOINT
+#ifdef MDC_FIXEDMATH
+#error "fixed-point math not allowed for fourpoint strategy"
+#endif // MDC_FIXEDMATH
 	mdc_int_t nlstep;
 	mdc_float_t nlevel[10];
-#endif
+#endif  // FOURPOINT
 	mdc_u32_t synclow;
 	mdc_u32_t synchigh;
 	mdc_int_t shstate;
@@ -84,8 +90,9 @@ typedef struct
 
 typedef struct {
 	mdc_decode_unit_t du[MDC_ND];
-	mdc_float_t hyst;
-	mdc_float_t incr;
+//	mdc_float_t hyst;
+//	mdc_float_t incr;
+	mdc_u32_t incru;
 	mdc_int_t level;
 	// mdc_float_t lastvalue;
 	mdc_int_t good;
