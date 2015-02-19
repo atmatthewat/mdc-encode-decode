@@ -177,8 +177,41 @@ mdc_encoder_t * mdc_encoder_new(int sampleRate)
 	if(!encoder)
 		return (mdc_encoder_t *) 0L;
 
+#define TWOPI (2.0 * 3.1415926535)
 	encoder->incr = (1200.0 * TWOPI) / ((mdc_float_t)sampleRate);
+
 	encoder->loaded = 0;
+
+	if(sampleRate == 8000)
+	{
+		encoder->incru = 644245094;
+		encoder->incru18 = 966367642;
+	} else if(sampleRate == 16000)
+	{
+		encoder->incru = 322122547;
+		encoder->incru18 = 483183820;
+	} else if(sampleRate == 22050)
+	{
+		encoder->incru = 233739716;
+		encoder->incru18 = 350609575;
+	} else if(sampleRate == 32000)
+	{
+		encoder->incru = 161061274;
+		encoder->incru18 = 241591910;
+	} else if(sampleRate == 44100)
+	{
+		encoder->incru = 116869858;
+		encoder->incru18 = 175304788;
+	} else if(sampleRate == 48000)
+	{
+		encoder->incru = 107374182;
+		encoder->incru18 = 161061274;
+	} else
+	{
+		// WARNING: lower precision than above
+		encoder->incru = 1200 * 2 * (0x80000000 / sampleRate);
+		encoder->incru18 = 1800 * 2 * (0x80000000 / sampleRate);
+	}
 
 	return encoder;
 }
@@ -348,8 +381,12 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 	mdc_int_t b;
 	mdc_int_t ofs;
 
+	mdc_u32_t lthu = encoder->thu;
 	encoder->th += encoder->incr;
+	encoder->thu += encoder->incru;
 
+
+//	if(encoder->thu  < lthu) // wrap
 	if(encoder->th >= TWOPI)
 	{
 		encoder->th -= TWOPI;
@@ -377,14 +414,20 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 	}
 
 	if(encoder->xorb)
-		encoder->tth += 1.5 * encoder->incr;
+		encoder->tthu += encoder->incru18;
 	else
-		encoder->tth += 1.0 * encoder->incr;
+		encoder->tthu += encoder->incru;
 
-	if(encoder->tth >= TWOPI)
-		encoder->tth -= TWOPI;
+	//if(encoder->xorb)
+	//	encoder->tth += 1.5 * encoder->incr;
+    // else
+    // 	encoder->tth += 1.0 * encoder->incr;
 
-	ofs = (int)(encoder->tth * (256.0 / TWOPI));
+	//if(encoder->tth >= TWOPI)
+	//	encoder->tth -= TWOPI;
+
+//	int ofsx = (int)(encoder->tth * (256.0 / TWOPI));
+	ofs = (int)(encoder->tthu >> 24);
 
 	return sintable[ofs];
 }
@@ -404,7 +447,9 @@ int mdc_encoder_get_samples(mdc_encoder_t *encoder,
 	if(encoder->state == 0)
 	{
 		encoder->th = 0.0;
-		encoder->tth = 0.0;
+	//	encoder->tth = 0.0;
+		encoder->tthu = 0;
+		encoder->thu = 0;
 		encoder->bpos = 0;
 		encoder->ipos = 0;
 		encoder->state = 1;
@@ -414,7 +459,16 @@ int mdc_encoder_get_samples(mdc_encoder_t *encoder,
 
 	i = 0;
 	while((i < bufferSize) && encoder->state)
+	{
 		buffer[i++] = _enc_get_samp(encoder);
+	}
+
+#ifdef FILL_FINAL
+	while(i<bufferSize)
+	{
+		buffer[i++] = sintable[0];
+	}
+#endif
 
 	if(encoder->state == 0)
 		encoder->loaded = 0;
