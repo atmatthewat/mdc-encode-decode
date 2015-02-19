@@ -38,18 +38,19 @@
 
 #include "mdc_types.h"
 
-#ifndef TWOPI
-#define TWOPI (2.0 * 3.1415926535)
-#endif
-
+//#define FILL_FINAL	// fills the end of the last block with zeros, rather than returning fewer samples than requested
 
 typedef struct {
 	mdc_int_t loaded;
 	mdc_int_t bpos;
 	mdc_int_t ipos;
 	mdc_float_t th;
-	mdc_float_t tth;
 	mdc_float_t incr;
+	//mdc_float_t tth;
+	mdc_u32_t thu;
+	mdc_u32_t tthu;
+	mdc_u32_t incru;
+	mdc_u32_t incru18;
 	mdc_int_t state;
 	mdc_int_t lb;
 	mdc_int_t xorb;
