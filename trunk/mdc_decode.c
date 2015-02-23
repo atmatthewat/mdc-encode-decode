@@ -81,6 +81,9 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 	{
 		// decoder->du[i].th = 0.0 + ( ((mdc_float_t)i) * (TWOPI/(mdc_float_t)MDC_ND));
 		decoder->du[i].thu = i * 2 * (0x80000000 / MDC_ND);
+#ifdef PLL
+		decoder->du[i].plt =  decoder->du[i].thu;
+#endif
 		// decoder->du[i].zc = 0; - deprecated
 		decoder->du[i].xorb = 0;
 		decoder->du[i].invert = 0;
@@ -421,6 +424,58 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 				decoder->du[j].zc = 0;
 			}
 		}
+#endif
+
+#ifdef PLL
+		decoder->zthu += decoder->incru;
+
+		if(value > 0)
+		{
+			if(decoder->zprev == 0)
+			{
+				if((decoder->zthu + decoder->incru) < decoder->zthu)	// XXX widen this up
+				{
+					for(j=0; j<MDC_ND; j++)
+					{
+						mdc_u32_t offset = decoder->du[j].thu - decoder->du[j].plt;
+						mdc_u32_t roffset = decoder->du[j].plt - decoder->du[j].thu;
+
+					//	printf("%d off by %08x\n",j,offset);
+						if(offset < 0x42371c72)
+						{
+							decoder->du[j].thu -= ((1 * offset) / 3);
+							//offset = decoder->du[j].thu - 0xcccccccd;
+
+							//printf("   fixed to %08x !\n",offset);
+
+						} else if(offset > 0xbf38e38e)
+						{
+							decoder->du[j].thu += ((1 * roffset) / 3);	// ???
+							//offset = decoder->du[j].thu - 0xcccccccd;
+							//printf("   fixed to %08x ?\n",offset);
+						} else if(offset > 0x7fffffff)
+						{
+							//printf("  bang forward\n");
+							// decoder->du[j].thu += 0x55555555;
+						} else
+						{
+							//printf("  bang reverse\n");
+							// decoder->du[j].thu -= 0x55555555;
+						}
+
+
+					}
+				}
+				decoder->zprev = 1;
+				decoder->zthu = 0;
+			}
+		}
+		else
+		{
+			decoder->zprev = 0;
+		}
+
+
 #endif
 
 #if defined(ONEPOINT)

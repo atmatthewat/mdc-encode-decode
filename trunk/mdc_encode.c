@@ -418,18 +418,18 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 	else
 		encoder->tthu += encoder->incru;
 
-	//if(encoder->xorb)
-	//	encoder->tth += 1.5 * encoder->incr;
-    // else
-    // 	encoder->tth += 1.0 * encoder->incr;
+	if(encoder->xorb)
+		encoder->tth += 1.5 * encoder->incr;
+     else
+     	encoder->tth += 1.0 * encoder->incr;
 
-	//if(encoder->tth >= TWOPI)
-	//	encoder->tth -= TWOPI;
+	if(encoder->tth >= TWOPI)
+		encoder->tth -= TWOPI;
 
-//	int ofsx = (int)(encoder->tth * (256.0 / TWOPI));
+	int ofsx = (int)(encoder->tth * (256.0 / TWOPI));
 	ofs = (int)(encoder->tthu >> 24);
 
-	return sintable[ofs];
+	return sintable[ofsx];
 }
 
 int mdc_encoder_get_samples(mdc_encoder_t *encoder,

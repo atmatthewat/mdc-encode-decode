@@ -44,8 +44,8 @@
 
 #define MDC_GDTHRESH 5  // "good bits" threshold
 
-#define FOURPOINT	// recommended 4-point method, requires high sample rates (16000 or higher)
-#undef  ONEPOINT    // alternative 1-point method
+#undef FOURPOINT	// recommended 4-point method, requires high sample rates (16000 or higher)
+#define  ONEPOINT    // alternative 1-point method
 
 #ifdef FOURPOINT
  #define MDC_ND 5  // recommended for four-point method
@@ -54,6 +54,8 @@
 #ifdef ONEPOINT
  #define MDC_ND 24  // recommended for one-point method
 #endif
+
+#define PLL	// enable PLL
 
  // #define MDC_ND <other value>
 
@@ -81,6 +83,9 @@ typedef struct
 	mdc_int_t nlstep;
 	mdc_float_t nlevel[10];
 #endif  // FOURPOINT
+#ifdef PLL
+	mdc_u32_t plt;
+#endif
 	mdc_u32_t synclow;
 	mdc_u32_t synchigh;
 	mdc_int_t shstate;
@@ -93,6 +98,10 @@ typedef struct {
 //	mdc_float_t hyst;
 //	mdc_float_t incr;
 	mdc_u32_t incru;
+#ifdef PLL
+	mdc_u32_t zthu;
+	mdc_int_t zprev;
+#endif
 	mdc_int_t level;
 	// mdc_float_t lastvalue;
 	mdc_int_t good;
