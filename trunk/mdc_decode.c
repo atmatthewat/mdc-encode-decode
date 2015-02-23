@@ -433,7 +433,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 		{
 			if(decoder->zprev == 0)
 			{
-				if((decoder->zthu + decoder->incru) < decoder->zthu)	// XXX widen this up
+				if((decoder->zthu + decoder->incru) < decoder->zthu)	// XXX widen this up later
 				{
 					for(j=0; j<MDC_ND; j++)
 					{
@@ -444,26 +444,15 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 						if(offset < 0x42371c72)
 						{
 							decoder->du[j].thu -= ((1 * offset) / 3);
-							//offset = decoder->du[j].thu - 0xcccccccd;
-
-							//printf("   fixed to %08x !\n",offset);
-
 						} else if(offset > 0xbf38e38e)
 						{
 							decoder->du[j].thu += ((1 * roffset) / 3);	// ???
-							//offset = decoder->du[j].thu - 0xcccccccd;
-							//printf("   fixed to %08x ?\n",offset);
 						} else if(offset > 0x7fffffff)
 						{
-							//printf("  bang forward\n");
-							// decoder->du[j].thu += 0x55555555;
+
 						} else
 						{
-							//printf("  bang reverse\n");
-							// decoder->du[j].thu -= 0x55555555;
 						}
-
-
 					}
 				}
 				decoder->zprev = 1;
