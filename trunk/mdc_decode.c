@@ -106,6 +106,52 @@ static void _clearbits(mdc_decoder_t *decoder, mdc_int_t x)
 		decoder->du[x].bits[i] = 0;
 }
 
+static void _gofix(unsigned char *data)
+{
+	int i, j, b, k;
+	int csr[7];
+	int syn;
+	int fixi,fixj;
+	int ec;
+	
+	syn = 0;
+	for(i=0; i<7; i++)
+	{
+		for(j=0; j<=7; j++)
+		{
+			for(k=6; k > 0; k--)
+				csr[k] = csr[k-1];
+
+			csr[0] = (data[i] >> j) & 0x01;
+			b = csr[0] + csr[2] + csr[5] + csr[6];
+			syn <<= 1;
+			if( (b & 0x01) ^ ((data[i+7] >> j) & 0x01) )
+			{
+				syn |= 1;
+			}
+			ec = 0;
+			if(syn & 0x80) ++ec;
+			if(syn & 0x20) ++ec;
+			if(syn & 0x04) ++ec;
+			if(syn & 0x02) ++ec;
+			if(ec >= 3)
+			{
+				syn ^= 0xa6;
+				fixi = i;
+				fixj = j-7;
+				if(fixj < 0)
+				{
+					--fixi;
+					fixj += 8;
+				}
+				if(fixi >= 0)
+					data[fixi] ^= 1<<fixj; // flip
+			}
+		}
+	}
+
+
+}
 
 
 
@@ -140,6 +186,8 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 		}
 	}
 
+
+	_gofix(data);
 
 	ccrc = _docrc(data, 4);
 	rcrc = data[5] << 8 | data[4];
@@ -433,23 +481,22 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 		{
 			if(decoder->zprev == 0)
 			{
-				if((decoder->zthu + decoder->incru) < decoder->zthu)	// XXX widen this up later
+				if( (decoder->zthu + decoder->incru) < decoder->zthu)
 				{
 					for(j=0; j<MDC_ND; j++)
 					{
+						mdc_u32_t offsi;
 						mdc_u32_t offset = decoder->du[j].thu - decoder->du[j].plt;
 						mdc_u32_t roffset = decoder->du[j].plt - decoder->du[j].thu;
 
-					//	printf("%d off by %08x\n",j,offset);
 						if(offset < 0x42371c72)
 						{
-							decoder->du[j].thu -= ((1 * offset) / 3);
+							decoder->du[j].thu -= ((3 * offset) / 4);
 						} else if(offset > 0xbf38e38e)
 						{
-							decoder->du[j].thu += ((1 * roffset) / 3);	// ???
+							decoder->du[j].thu += ((3 * roffset) / 4);	// ???
 						} else if(offset > 0x7fffffff)
 						{
-
 						} else
 						{
 						}
@@ -464,6 +511,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 			decoder->zprev = 0;
 		}
 
+		decoder->vprev = value;
 
 #endif
 
@@ -477,6 +525,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 		//	if(decoder->du[j].th >= TWOPI)
 			if(decoder->du[j].thu < lthu) // wrapped
 			{
+				//printf("**sample point**\n");
 				if(value > 0)
 					decoder->du[j].xorb = 1;
 				else
