@@ -57,6 +57,12 @@
 
 #define PLL	// enable PLL
 
+#ifdef PLL
+ #ifdef FOURPOINT
+  #error "PLL must not be enabled for fourpoint strategy"
+ #endif
+#endif
+
  // #define MDC_ND <other value>
 
 typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then extra0-3 are valid
@@ -101,9 +107,9 @@ typedef struct {
 #ifdef PLL
 	mdc_u32_t zthu;
 	mdc_int_t zprev;
+	mdc_float_t vprev;
 #endif
 	mdc_int_t level;
-	// mdc_float_t lastvalue;
 	mdc_int_t good;
 	mdc_int_t indouble;
 	mdc_u8_t op;
