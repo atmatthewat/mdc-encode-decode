@@ -380,6 +380,7 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 {
 	mdc_int_t b;
 	mdc_int_t ofs;
+	mdc_int_t ofsx;
 
 	mdc_u32_t lthu = encoder->thu;
 	encoder->th += encoder->incr;
@@ -426,7 +427,7 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 	if(encoder->tth >= TWOPI)
 		encoder->tth -= TWOPI;
 
-	int ofsx = (int)(encoder->tth * (256.0 / TWOPI));
+	ofsx = (int)(encoder->tth * (256.0 / TWOPI));
 	ofs = (int)(encoder->tthu >> 24);
 
 	return sintable[ofsx];
