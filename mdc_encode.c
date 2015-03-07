@@ -447,7 +447,7 @@ int mdc_encoder_get_samples(mdc_encoder_t *encoder,
 	if(encoder->state == 0)
 	{
 		encoder->th = 0.0;
-	//	encoder->tth = 0.0;
+		encoder->tth = 0.0;
 		encoder->tthu = 0;
 		encoder->thu = 0;
 		encoder->bpos = 0;
