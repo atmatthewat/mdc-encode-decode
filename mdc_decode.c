@@ -79,17 +79,12 @@ mdc_decoder_t * mdc_decoder_new(int sampleRate)
 
 	for(i=0; i<MDC_ND; i++)
 	{
-		// decoder->du[i].th = 0.0 + ( ((mdc_float_t)i) * (TWOPI/(mdc_float_t)MDC_ND));
 		decoder->du[i].thu = i * 2 * (0x80000000 / MDC_ND);
-#ifdef PLL
-		decoder->du[i].plt =  decoder->du[i].thu;
-#endif
-		// decoder->du[i].zc = 0; - deprecated
 		decoder->du[i].xorb = 0;
 		decoder->du[i].invert = 0;
 		decoder->du[i].shstate = -1;
 		decoder->du[i].shcount = 0;
-	#ifdef FOURPOINT
+	#ifdef MDC_FOURPOINT
 		decoder->du[i].nlstep = i;
 	#endif
 	}
@@ -106,6 +101,7 @@ static void _clearbits(mdc_decoder_t *decoder, mdc_int_t x)
 		decoder->du[x].bits[i] = 0;
 }
 
+#ifdef MDC_ECC
 static void _gofix(unsigned char *data)
 {
 	int i, j, b, k;
@@ -115,6 +111,9 @@ static void _gofix(unsigned char *data)
 	int ec;
 	
 	syn = 0;
+	for(i=0; i<7; i++)
+		csr[i] = 0;
+
 	for(i=0; i<7; i++)
 	{
 		for(j=0; j<=7; j++)
@@ -152,7 +151,7 @@ static void _gofix(unsigned char *data)
 
 
 }
-
+#endif
 
 
 static void _procbits(mdc_decoder_t *decoder, int x)
@@ -187,7 +186,9 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 	}
 
 
+#ifdef MDC_ECC
 	_gofix(data);
+#endif
 
 	ccrc = _docrc(data, 4);
 	rcrc = data[5] << 8 | data[4];
@@ -217,8 +218,6 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 				decoder->op = data[0];
 				decoder->arg = data[1];
 				decoder->unitID = (data[2] << 8) | data[3];
-				decoder->crc = (data[4] << 8) | data[5];
-	
 
 				switch(data[0])
 				{
@@ -249,12 +248,6 @@ static void _procbits(mdc_decoder_t *decoder, int x)
 	}
 	else
 	{
-#if 0
-		printf("bad: ");
-		for(i=0; i<14; i++)
-			printf("%02x ",data[i]);
-		printf("%x\n",ccrc);
-#endif
 
 		decoder->du[x].shstate = -1;
 	}
@@ -345,26 +338,7 @@ static void _shiftin(mdc_decoder_t *decoder, int x)
 	}
 }
 
-#if 0 // zerocrossing deprecated
-static void _zcproc(mdc_decoder_t *decoder, int x)
-{
-	switch(decoder->du[x].zc)
-	{
-	case 2:
-	case 4:
-		break;
-	case 3:
-		decoder->du[x].xorb = !(decoder->du[x].xorb);
-		break;
-	default:
-		return;
-	}
-
-	_shiftin(decoder, x);
-}
-#endif
-
-#ifdef FOURPOINT
+#ifdef MDC_FOURPOINT
 
 static void _nlproc(mdc_decoder_t *decoder, int x)
 {
@@ -396,7 +370,7 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
                                 mdc_sample_t *samples,
                                 int numSamples)
 {
-	mdc_int_t i, j, k;
+	mdc_int_t i, j;
 	mdc_sample_t sample;
 #ifndef MDC_FIXEDMATH
 	mdc_float_t value;
@@ -440,92 +414,14 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 #endif // sample format
 #endif // not MDC_FIXEDMATH
 
-
-#if 0  // zerocrossing is deprecated - doesn't work well for xor-precoded
-		if(decoder->level == 0)
-		{
-			if(value > decoder->hyst)
-			{
-				for(k=0; k<MDC_ND; k++)
-					decoder->du[k].zc++;
-				decoder->level = 1;
-			}
-		}
-		else
-		{
-			if(value < (-1.0 * decoder->hyst))
-			{
-				for(k=0; k<MDC_ND; k++)
-					decoder->du[k].zc++;
-				decoder->level = 0;
-			}
-		}
-		
+#if defined(MDC_ONEPOINT)
 
 		for(j=0; j<MDC_ND; j++)
 		{
-			decoder->du[j].th += decoder->incr;
-			if(decoder->du[j].th >= TWOPI)
-			{
-				_zcproc(decoder, j);
-				decoder->du[j].th -= TWOPI;
-				decoder->du[j].zc = 0;
-			}
-		}
-#endif
-
-#ifdef PLL
-		decoder->zthu += decoder->incru;
-
-		if(value > 0)
-		{
-			if(decoder->zprev == 0)
-			{
-				if( (decoder->zthu + decoder->incru) < decoder->zthu)
-				{
-					for(j=0; j<MDC_ND; j++)
-					{
-						mdc_u32_t offsi;
-						mdc_u32_t offset = decoder->du[j].thu - decoder->du[j].plt;
-						mdc_u32_t roffset = decoder->du[j].plt - decoder->du[j].thu;
-
-						if(offset < 0x42371c72)
-						{
-							decoder->du[j].thu -= ((3 * offset) / 4);
-						} else if(offset > 0xbf38e38e)
-						{
-							decoder->du[j].thu += ((3 * roffset) / 4);	// ???
-						} else if(offset > 0x7fffffff)
-						{
-						} else
-						{
-						}
-					}
-				}
-				decoder->zprev = 1;
-				decoder->zthu = 0;
-			}
-		}
-		else
-		{
-			decoder->zprev = 0;
-		}
-
-		decoder->vprev = value;
-
-#endif
-
-#if defined(ONEPOINT)
-
-		for(j=0; j<MDC_ND; j++)
-		{
-			// decoder->du[j].th += decoder->incr;
 			mdc_u32_t lthu = decoder->du[j].thu;
 			decoder->du[j].thu += decoder->incru;
-		//	if(decoder->du[j].th >= TWOPI)
 			if(decoder->du[j].thu < lthu) // wrapped
 			{
-				//printf("**sample point**\n");
 				if(value > 0)
 					decoder->du[j].xorb = 1;
 				else
@@ -533,11 +429,10 @@ int mdc_decoder_process_samples(mdc_decoder_t *decoder,
 				if(decoder->du[j].invert)
 					decoder->du[j].xorb = !(decoder->du[j].xorb);
 				_shiftin(decoder, j);
-				//decoder->du[j].th -= TWOPI;
 			}
 		}
 
-#elif defined(FOURPOINT)	/* ZEROCROSSING */
+#elif defined(MDC_FOURPOINT)
 
 #ifdef MDC_FIXEDMATH
 #error "fixed-point math not allowed for fourpoint strategy"

@@ -51,8 +51,8 @@ int main()
 	mdc_decoder_t *decoder;
 	int rv;
 
-	encoder = mdc_encoder_new(8000);
-	decoder = mdc_decoder_new(8000);
+	encoder = mdc_encoder_new(48000);
+	decoder = mdc_decoder_new(48000);
 
 	if(!decoder)
 	{
