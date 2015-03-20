@@ -177,9 +177,6 @@ mdc_encoder_t * mdc_encoder_new(int sampleRate)
 	if(!encoder)
 		return (mdc_encoder_t *) 0L;
 
-#define TWOPI (2.0 * 3.1415926535)
-	encoder->incr = (1200.0 * TWOPI) / ((mdc_float_t)sampleRate);
-
 	encoder->loaded = 0;
 
 	if(sampleRate == 8000)
@@ -267,14 +264,6 @@ static mdc_u8_t * _enc_str(mdc_u8_t *data)
 			data[i+7] |= (b & 0x01) << j;
 		}
 	}
-
-#if 0
-	for(i=0; i<14; i++)
-	{
-		printf("%02x ",data[i]);
-	}
-	printf("\n");
-#endif
 
 	k=0;
 	m=0;
@@ -380,17 +369,13 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 {
 	mdc_int_t b;
 	mdc_int_t ofs;
-	mdc_int_t ofsx;
 
 	mdc_u32_t lthu = encoder->thu;
-	encoder->th += encoder->incr;
 	encoder->thu += encoder->incru;
 
 
-//	if(encoder->thu  < lthu) // wrap
-	if(encoder->th >= TWOPI)
+	if(encoder->thu  < lthu) // wrap
 	{
-		encoder->th -= TWOPI;
 		encoder->ipos++;
 		if(encoder->ipos > 7)
 		{
@@ -419,18 +404,9 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 	else
 		encoder->tthu += encoder->incru;
 
-	if(encoder->xorb)
-		encoder->tth += 1.5 * encoder->incr;
-     else
-     	encoder->tth += 1.0 * encoder->incr;
-
-	if(encoder->tth >= TWOPI)
-		encoder->tth -= TWOPI;
-
-	ofsx = (int)(encoder->tth * (256.0 / TWOPI));
 	ofs = (int)(encoder->tthu >> 24);
 
-	return sintable[ofsx];
+	return sintable[ofs];
 }
 
 int mdc_encoder_get_samples(mdc_encoder_t *encoder,
@@ -447,8 +423,6 @@ int mdc_encoder_get_samples(mdc_encoder_t *encoder,
 
 	if(encoder->state == 0)
 	{
-		encoder->th = 0.0;
-		encoder->tth = 0.0;
 		encoder->tthu = 0;
 		encoder->thu = 0;
 		encoder->bpos = 0;

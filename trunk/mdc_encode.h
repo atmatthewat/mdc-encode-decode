@@ -44,9 +44,9 @@ typedef struct {
 	mdc_int_t loaded;
 	mdc_int_t bpos;
 	mdc_int_t ipos;
-	mdc_float_t th;
-	mdc_float_t incr;
-	mdc_float_t tth;
+	//mdc_float_t th;
+	//mdc_float_t incr;
+	//mdc_float_t tth;
 	mdc_u32_t thu;
 	mdc_u32_t tthu;
 	mdc_u32_t incru;
