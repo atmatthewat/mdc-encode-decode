@@ -38,32 +38,20 @@
 
 #include "mdc_types.h"
 
-// #ifndef TWOPI
-// #define TWOPI (2.0 * 3.1415926535)
-// #endif
-
 #define MDC_GDTHRESH 5  // "good bits" threshold
 
-#undef FOURPOINT	// recommended 4-point method, requires high sample rates (16000 or higher)
-#define  ONEPOINT    // alternative 1-point method
+#define MDC_ECC
 
-#ifdef FOURPOINT
+#define MDC_FOURPOINT	// recommended 4-point method, requires high sample rates (16000 or higher)
+#undef  MDC_ONEPOINT    // alternative 1-point method
+
+#ifdef MDC_FOURPOINT
  #define MDC_ND 5  // recommended for four-point method
 #endif
 
-#ifdef ONEPOINT
- #define MDC_ND 24  // recommended for one-point method
+#ifdef MDC_ONEPOINT
+ #define MDC_ND 4  // recommended for one-point method
 #endif
-
-#define PLL	// enable PLL
-
-#ifdef PLL
- #ifdef FOURPOINT
-  #error "PLL must not be enabled for fourpoint strategy"
- #endif
-#endif
-
- // #define MDC_ND <other value>
 
 typedef void (*mdc_decoder_callback_t)(	int frameCount, // 1 or 2 - if 2 then extra0-3 are valid
 										unsigned char op,
@@ -82,13 +70,13 @@ typedef struct
 //	mdc_int_t zc; - deprecated
 	mdc_int_t xorb;
 	mdc_int_t invert;
-#ifdef FOURPOINT
+#ifdef MDC_FOURPOINT
 #ifdef MDC_FIXEDMATH
 #error "fixed-point math not allowed for fourpoint strategy"
 #endif // MDC_FIXEDMATH
 	mdc_int_t nlstep;
 	mdc_float_t nlevel[10];
-#endif  // FOURPOINT
+#endif  // MDC_FOURPOINT
 #ifdef PLL
 	mdc_u32_t plt;
 #endif
@@ -115,7 +103,6 @@ typedef struct {
 	mdc_u8_t op;
 	mdc_u8_t arg;
 	mdc_u16_t unitID;
-	mdc_u8_t crc;
 	mdc_u8_t extra0;
 	mdc_u8_t extra1;
 	mdc_u8_t extra2;
