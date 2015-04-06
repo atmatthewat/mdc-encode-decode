@@ -1,0 +1,1 @@
+Software modem to encode and decode a specific format of 1200 BPS MSK data burst. Encodes to and decodes from a set of audio samples. Portable C code, tested on Linux, Windows, and several DSP platforms.
