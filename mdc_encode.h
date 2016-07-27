@@ -40,6 +40,8 @@
 
 //#define FILL_FINAL	// fills the end of the last block with zeros, rather than returning fewer samples than requested
 
+//#define MDC_ENCODE_FULL_AMPLITUDE	// encode at 100% amplitude (default is 68% amplitude for recommended deviation)
+
 typedef struct {
 	mdc_int_t loaded;
 	mdc_int_t bpos;
