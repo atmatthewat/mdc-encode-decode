@@ -288,6 +288,7 @@ mdc_encoder_t * mdc_encoder_new(int sampleRate)
 		return (mdc_encoder_t *) 0L;
 
 	encoder->loaded = 0;
+	encoder->preamble_set = 0;
 
 	if(sampleRate == 8000)
 	{
@@ -321,6 +322,20 @@ mdc_encoder_t * mdc_encoder_new(int sampleRate)
 	}
 
 	return encoder;
+}
+
+int mdc_encoder_set_preamble(mdc_encoder_t *encoder,
+                          int preambleLength)
+{
+	if(!encoder)
+		return -1;
+	
+	if(preambleLength < 0)
+		return -1;
+	
+	encoder->preamble_set = preambleLength;
+
+	return 0;
 }
 
 static mdc_u8_t * _enc_leader(mdc_u8_t *data)
@@ -490,7 +505,11 @@ static mdc_sample_t  _enc_get_samp(mdc_encoder_t *encoder)
 		if(encoder->ipos > 7)
 		{
 			encoder->ipos = 0;
-			encoder->bpos++;
+			if(encoder->preamble_count == 0)
+				encoder->bpos++;
+			else
+				encoder->preamble_count--;
+
 			if(encoder->bpos >= encoder->loaded)
 			{
 				encoder->state = 0;
@@ -540,6 +559,7 @@ int mdc_encoder_get_samples(mdc_encoder_t *encoder,
 		encoder->state = 1;
 		encoder->xorb = 1;
 		encoder->lb = 0;
+		encoder->preamble_count = encoder->preamble_set;
 	}
 
 	i = 0;

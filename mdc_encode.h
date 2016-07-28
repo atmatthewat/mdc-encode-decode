@@ -46,9 +46,8 @@ typedef struct {
 	mdc_int_t loaded;
 	mdc_int_t bpos;
 	mdc_int_t ipos;
-	//mdc_float_t th;
-	//mdc_float_t incr;
-	//mdc_float_t tth;
+	mdc_int_t preamble_set;
+	mdc_int_t preamble_count;
 	mdc_u32_t thu;
 	mdc_u32_t tthu;
 	mdc_u32_t incru;
@@ -70,6 +69,19 @@ typedef struct {
 
 */
 mdc_encoder_t * mdc_encoder_new(int sampleRate);
+
+/*
+ mdc_encoder_set_preamble(mdc_encoder_t *encoder,
+                          int preambleLength)
+
+ parameters: mdc_encoder_t *encoder  - pointer to the encoder object
+             int preambleLength - length of additional preamble (in bytes) - preamble time is 6.66 msec * preambleLength
+
+ returns: -1 for error, 0 otherwise
+*/
+
+int mdc_encoder_set_preamble(mdc_encoder_t *encoder,
+                          int preambleLength);
 
 
 /*
